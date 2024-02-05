@@ -46,7 +46,7 @@ navigate("/home");
 
   return (
     <BoxContainer>
-      <FormContainer onSubmit={handleLogin}>
+      <FormContainer onSubmit={handleLogin} data-testid="login-form">
         <h1>Login</h1>
         <Input
           type="email"

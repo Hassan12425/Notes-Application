@@ -6,14 +6,27 @@ import { Search } from "react-feather";
 
 const Nav = ({  data, setData, refresher }) => {
   const [searchValue, setSearchValue] = useState("");
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem("userId");
-    navigate("/");
+    // navigate("/");
   };
 
+  const search = (value) => {
+    if (value) {
+      const filteredData = data.filter((x) =>
+        x.title.toLowerCase().includes(value.toLowerCase())
+      );
+      setData([...filteredData]);
+    } else {
+      refresher();
+    }
+  };
 
+  useEffect(() => {
+    search(searchValue);
+  }, [searchValue]);
 
   return (
     <Navbar className="navbar navbar-expand-lg ">
@@ -28,6 +41,7 @@ const Nav = ({  data, setData, refresher }) => {
             placeholder="Search"
             aria-label="Search"
             value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value) }
             
           />
           <Icon>

@@ -1,0 +1,298 @@
+import { useState, useEffect } from "react";
+import Nav from "./components/Navbar/Nav";
+import ModalDiv from "./components/Modal/Modal";
+import { Frown } from "react-feather";
+import SingleNote from "./components/SingleNote/SingleNote";
+import {  BoxContainer, StyledDiv } from "./Home.styled";
+import {
+  DndContext,
+  closestCenter
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy
+} from "@dnd-kit/sortable";
+import { AddButton } from "./components/Navbar/Nav.styled";
+
+
+
+const Home = () => {
+  const userId = localStorage.getItem("userId") || "defaultUserId";
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    const allNotes = JSON.parse(localStorage.getItem("myNotes")) || [];
+    const userNotes = allNotes.filter((note) => note.userId === userId);
+    setData(userNotes);
+  }, [userId]);
+
+  const [showModal, setShowModal] = useState(false);
+
+  const refresher = () => {
+    const allNotes = JSON.parse(localStorage.getItem("myNotes")) || [];
+    const userNotes = allNotes.filter((note) => note.userId === userId);
+    setData(userNotes);
+  };
+  const [activeId, setActiveId] = useState(null);
+  function handleDragStart(event) {
+    setActiveId(event.active.id);
+  }
+
+  const handleDrop = (event) => {
+    const { over, active } = event;
+    const draggedItemId = active.id;
+    const droppedOnItemId = over.id;
+    console.log("ACTIVE:", active?.id);
+  console.log("OVER:", over?.id);
+    const draggedItem = data.find((note) => note.id === draggedItemId);
+    const droppedOnItem = data.find((note) => note.id === droppedOnItemId);
+  
+    const draggedItemIndex = data.indexOf(draggedItem);
+    const droppedOnItemIndex = data.indexOf(droppedOnItem);
+  
+    const newData = [...data];
+    newData.splice(droppedOnItemIndex, 0, newData.splice(draggedItemIndex, 1)[0]);
+  
+    setData(newData);
+    localStorage.setItem("myNotes", JSON.stringify(newData));
+  };
+const handleDragEnd = (event) => {
+  handleDrop(event);
+};
+ 
+  return (
+    <>
+    <BoxContainer>
+      <Nav
+        setShowModal={setShowModal}
+        data={data}
+        setData={setData}
+        refresher={refresher}
+      />
+      {showModal && (
+        <ModalDiv
+          showModal={showModal}
+          setShowModal={setShowModal}
+          refresher={refresher}
+        />
+      )}
+
+      {/* Drag and Drop Context */}
+      <DndContext 
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+      >
+         <SortableContext
+          items={data}
+          strategy={verticalListSortingStrategy}
+        >
+            <StyledDiv >
+              {!data.length ? (
+                <h1>
+                  <Frown size={100} />
+                  No Notes. Create a New One
+                </h1>
+              ) : (
+                data.map((item, index) => (
+                  <SingleNote
+                    key={item.id}
+                    item={item}
+                    refresher={refresher}
+                    index={index}
+                    onDrop={handleDrop}
+                  />
+                ))
+              )}
+            </StyledDiv>
+            </SortableContext>
+      </DndContext>
+   
+    </BoxContainer>
+    <AddButton onClick={() => setShowModal(true)} >
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus" width="30" height="30" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+       </AddButton>
+    </>
+  );
+};
+
+export default Home;
+
+
+
+
+import React, { useEffect, useState } from "react";
+import { Check,} from "react-feather";
+import { Card, CloseButtonIcon, CloseButtonWrapper, DateContainer, DragButtonIcon, Icon, IconContainer, MainStyledCard, NoteText, NoteTextarea, NoteTitle, NoteTitleInput, PrimaryButton, StyledNoteCard } from "./SingleNoteStyling";
+import { useNavigate } from "react-router-dom";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
+import DragIcon from "../../images/grip-horizontal.svg";
+const SingleNote = ({ item, refresher, index, onDrop }) => {
+  const userId = localStorage.getItem("userId") || "defaultUserId";
+  const savedData = JSON.parse(localStorage.getItem("myNotes")) || [];
+  const [edit, setEdit] = useState(false);
+  const [title, setTitle] = useState(item.title);
+  const [content, setContent] = useState(item.content);
+  const navigate = useNavigate();
+  const [dragging, setDragging] = useState(false);
+
+  useEffect(() => {
+    if (!userId) {
+      navigate('/login');
+    }
+  }, [userId]);
+
+  const handleDelete = () => {
+    const pass = window.confirm("Are you sure you want to delete this note ?");
+    if (!pass) {
+      return;
+    }
+
+    if (savedData.length) {
+      const newData = savedData.filter((data) => data.id !== item.id);
+      localStorage.setItem("myNotes", JSON.stringify(newData));
+      refresher();
+    }
+  };
+
+  const handleEdit = (e) => {
+    e.stopPropagation();
+    setDragging(false);
+    const idx = savedData.findIndex((x) => x.id === item.id);
+    savedData[idx].title = title;
+    savedData[idx].content = content; 
+    localStorage.setItem("myNotes", JSON.stringify(savedData));
+    setEdit(false);
+    refresher();
+  };
+
+  const { attributes: dragAttributes, listeners: dragListeners, setNodeRef: setDragNodeRef, transform, isDragging } = useDraggable({
+    id: item.id,
+    disabled: !dragging, 
+  });
+
+  const { isOver, setNodeRef: setDropNodeRef } = useDroppable({
+    id: `droppable-${item.id}`,
+  });
+
+  const dragStyles = {
+    transform: transform ? `translate(${transform.x}px, ${transform.y}px)` : "none",
+    opacity: isDragging ? 0.5 : 1,
+    // transition: "transform 5.2s ease, opacity 0.2s ease",
+    border: isDragging ? "2px dashed black" : "",
+    willChange: "transform"
+  };
+  const dropStyles = {
+    transition: "transform 0.2s ease, opacity 0.2s ease, scale 0.2s ease",
+    transform: isOver ? "scale(1.1)" : "scale(1)",
+  };
+  const handleDragIconClick = () => {
+    setDragging(true);
+  };
+
+  // const handleDragEnd = () => {
+  //   setDragging(false);
+  // };
+
+  const handleMouseDown = () => {
+    if (!dragging) {
+      setDragging(true);
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (dragging) {
+      setDragging(false);
+    }
+  };
+
+  const handleDrop = () => {
+    onDrop();
+  };
+  return (
+    <MainStyledCard
+      ref={setDropNodeRef}
+      onDrop={handleDrop}
+      style={dropStyles}
+    >
+
+      <StyledNoteCard
+        style={dragStyles}
+        ref={setDragNodeRef}
+        {...dragAttributes}
+        {...dragListeners}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+      >
+           
+        <Card background={item.background} >
+        <DragButtonIcon onClick={handleDragIconClick}> <img src={DragIcon} alt="dragicon"/> </DragButtonIcon>
+          <CloseButtonWrapper onClick={handleDelete}>
+            <CloseButtonIcon xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-x" viewBox="0 0 24 24">
+              <path d="M0 0h24v24H0z" fill="none" />
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </CloseButtonIcon>
+          </CloseButtonWrapper>
+          <div>
+            {!edit ? (
+              <NoteTitle>{item.title} </NoteTitle>
+            ) : (
+              <NoteTitleInput
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                foreground={item.foreground}
+              />
+            )}
+            {!edit ? (
+              <NoteText>{item.content}</NoteText>
+            ) : (
+              <NoteTextarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                foreground={item.foreground}
+                rows={6}
+              />
+            )}
+          </div>
+          <div>
+            <DateContainer>{item.date}</DateContainer>
+            <IconContainer>
+              {!edit ? (
+                <Icon onClick={() => setEdit(true)}>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-pencil" width="20" height="20" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z"></path><path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4"></path><line x1="13.5" y1="6.5" x2="17.5" y2="10.5"></line></svg>
+                </Icon>
+              ) : (
+                <PrimaryButton onClick={handleEdit}>
+                  <Check />
+                </PrimaryButton>
+              )}
+            </IconContainer>
+           
+          </div>
+        </Card>
+      </StyledNoteCard>
+
+    </MainStyledCard>
+  );
+};
+
+export default SingleNote;
+
+
+
+ const handleDrop = (event) => {
+    const { over, active } = event;
+    const draggedItemId = active.id;
+    const droppedOnItemId = over.id;
+
+    const draggedItem = data.find((note) => note.id === draggedItemId);
+    const droppedOnItem = data.find((note) => note.id === droppedOnItemId);
+
+    const draggedItemIndex = data.indexOf(draggedItem);
+    const droppedOnItemIndex = data.indexOf(droppedOnItem);
+
+    const newData = arrayMove(data, draggedItemIndex, droppedOnItemIndex);
+
+    setData(newData);
+    localStorage.setItem("myNotes", JSON.stringify(newData));
+  };

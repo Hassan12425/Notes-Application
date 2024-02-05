@@ -14,6 +14,10 @@ function App() {
       <BrowserRouter>
 <Routes>
 <Route  path="/" element={<LogginForm/>}/>
+<Route  path="/signup" element={<SigupForm/>}/>
+<Route path='/' element={<ProtectedRoute/>}>
+  <Route path='/home'element={<Home/>} />
+</Route>
 </Routes>
 </BrowserRouter>
     </div>

@@ -77,7 +77,7 @@ function ModalDiv({ showModal, setShowModal, refresher, editNoteData }) {
 
   return (
     <>
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      <Modal show={showModal} onHide={() => setShowModal(false)} data-testid="modal">
         <Modal.Header closeButton>
         <Modal.Title>{editNoteData ? "Edit Note" : "Add New Note"}</Modal.Title>
         </Modal.Header>
@@ -163,7 +163,7 @@ function ModalDiv({ showModal, setShowModal, refresher, editNoteData }) {
           <Button variant="secondary" onClick={handleCancel}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleAddOrEdit}>
+          <Button variant="primary" onClick={handleAddOrEdit} data-testid="add-note-button">
             <Plus /> {editNoteData ? "Update" : "Add"}
           </Button>
         </Modal.Footer>
