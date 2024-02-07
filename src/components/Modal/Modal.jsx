@@ -74,14 +74,19 @@ function ModalDiv({ showModal, setShowModal, refresher, editNoteData }) {
     setBackground(bg);
     setForeground(fg);
   };
-
+  // Click handler for the outside container to close the modal
+  const handleModalClick = (event) => {
+    if (event.target === event.currentTarget) {
+      setShowModal(false); // Close the modal if clicked outside the modal content
+    }
+  };
   return (
-    <>
+    <div data-testid="outside-container"onClick={handleModalClick}>
       <Modal show={showModal} onHide={() => setShowModal(false)} data-testid="modal">
         <Modal.Header closeButton>
         <Modal.Title>{editNoteData ? "Edit Note" : "Add New Note"}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body >
           <input
             className="form-control mb-3"
             placeholder="Enter title"
@@ -168,7 +173,7 @@ function ModalDiv({ showModal, setShowModal, refresher, editNoteData }) {
           </Button>
         </Modal.Footer>
       </Modal>
-    </>
+    </div>
   );
 }
 

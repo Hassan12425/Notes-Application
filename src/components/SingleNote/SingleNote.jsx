@@ -107,7 +107,7 @@ const SingleNote = ({ item, refresher, onDrop, setShowModal }) => {
 
   return (
     <MainStyledCard
-    data-testid={`note-${item.id}`}
+    data-testid={`note-item-${item.id}`}
       ref={setDropNodeRef}
       onDrop={handleDrop}
       style={dropStyles}
